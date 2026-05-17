@@ -1,0 +1,3 @@
+-Ilib
+-ObjC
+-DSOKOL_METAL

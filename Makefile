@@ -22,3 +22,6 @@ sokol:
 	wget -O lib/sokol_app.h https://raw.githubusercontent.com/floooh/sokol/refs/heads/master/sokol_app.h
 	wget -O lib/sokol_gfx.h https://raw.githubusercontent.com/floooh/sokol/refs/heads/master/sokol_gfx.h
 	wget -O lib/sokol_glue.h https://raw.githubusercontent.com/floooh/sokol/refs/heads/master/sokol_glue.h
+
+sokol_tools:
+	wget -O sokol_shdc https://github.com/floooh/sokol-tools-bin/raw/refs/heads/master/bin/osx_arm64/sokol-shdc

@@ -9,7 +9,18 @@ void frame() {}
 
 void cleanup() {}
 
-void event(const sapp_event *ev) {}
+void event(const sapp_event *ev) {
+  if (ev->type == SAPP_EVENTTYPE_KEY_DOWN) {
+    printf("key %d pressed\n", ev->key_code);
+    if (ev->key_code == SAPP_KEYCODE_ESCAPE) {
+      printf("App quit\n");
+      sapp_quit();
+    }
+    if (ev->key_code == SAPP_KEYCODE_ENTER) {
+      printf("key enter pressed\n");
+    }
+  }
+}
 
 sapp_desc sokol_main(int argc, char *argv[]) {
   printf("Hello sokol! \n");

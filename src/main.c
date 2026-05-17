@@ -1,13 +1,36 @@
-#define SOKOL_IMPL
-
-#include <sokol_app.h>
 #include <stdio.h>
 
-void init() {}
+#define SOKOL_IMPL
+#include <sokol_app.h>
+#include <sokol_gfx.h>
+#include <sokol_glue.h>
 
-void frame() {}
+static struct {
+  sg_pipeline pip;
+  sg_bindings bind;
+  sg_pass_action pass_action;
+} state;
 
-void cleanup() {}
+void init() {
+  printf("void init\n");
+
+  sg_setup(&(sg_desc){.environment = sglue_environment()});
+
+  state.pass_action = (sg_pass_action){
+      .colors[0] = {.load_action = SG_LOADACTION_CLEAR,
+                    .clear_value = {1.0f, 0.1f, 0.1f, 1.0f}},
+  };
+}
+
+void frame() {
+  sg_begin_pass(
+      &(sg_pass){.action = state.pass_action, .swapchain = sglue_swapchain()});
+
+  sg_end_pass();
+  sg_commit();
+}
+
+void cleanup() { sg_shutdown(); }
 
 void event(const sapp_event *ev) {
   if (ev->type == SAPP_EVENTTYPE_KEY_DOWN) {

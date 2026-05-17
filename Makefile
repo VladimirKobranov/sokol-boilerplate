@@ -16,3 +16,9 @@ compile_flags.txt: FORCE
 	@echo $(CFLAGS) | tr ' ' '\n' > $@
 
 FORCE:
+
+
+sokol:
+	wget -O lib/sokol_app.h https://raw.githubusercontent.com/floooh/sokol/refs/heads/master/sokol_app.h
+	wget -O lib/sokol_gfx.h https://raw.githubusercontent.com/floooh/sokol/refs/heads/master/sokol_gfx.h
+	wget -O lib/sokol_glue.h https://raw.githubusercontent.com/floooh/sokol/refs/heads/master/sokol_glue.h

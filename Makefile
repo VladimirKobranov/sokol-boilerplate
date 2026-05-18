@@ -1,4 +1,4 @@
-CFLAGS +=-Ilib
+CFLAGS +=-Ilib -Isrc/shaders
 
 LIBS +=-framework Cocoa -framework QuartzCore -framework Metal -framework MetalKit
 CFLAGS +=-ObjC 
@@ -6,8 +6,11 @@ DEFS +=-DSOKOL_METAL
 
 CFLAGS += $(DEFS)
 
-main:	 src/main.c
+.PHONY: shader
+
+main:	 src/main.c src/shaders/shader_glsl.h
 	 clang -o main $(CFLAGS) $(LIBS) src/main.c
+
 run: main
 	@./main
 
@@ -17,6 +20,10 @@ compile_flags.txt: FORCE
 
 FORCE:
 
+shader: src/shaders/shader_glsl.h
+
+src/shaders/shader_glsl.h: src/shaders/shader.glsl
+	./sokol-shdc --input src/shaders/shader.glsl --output src/shaders/shader_glsl.h --slang glsl430:hlsl5:metal_macos
 
 sokol:
 	wget -O lib/sokol_app.h https://raw.githubusercontent.com/floooh/sokol/refs/heads/master/sokol_app.h

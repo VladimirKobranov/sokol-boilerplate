@@ -1,3 +1,4 @@
 -Ilib
+-Isrc/shaders
 -ObjC
 -DSOKOL_METAL

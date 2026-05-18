@@ -7,6 +7,7 @@
 
 // shader
 #include <shader_glsl.h>
+// some new
 
 static struct {
   sg_pipeline pip;
@@ -72,6 +73,7 @@ void event(const sapp_event *ev) {
 }
 
 sapp_desc sokol_main(int argc, char *argv[]) {
+  (void)argc; (void)argv;
   printf("Hello sokol! \n");
 
   return (sapp_desc){

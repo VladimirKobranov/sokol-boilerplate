@@ -1,10 +1,11 @@
 #include <stdio.h>
 
-#define SOKOL_IMPL
+// deps
 #include <sokol_app.h>
 #include <sokol_gfx.h>
 #include <sokol_glue.h>
 
+// shader
 #include <shader_glsl.h>
 
 static struct {

@@ -1,18 +1,29 @@
 CFLAGS +=-Ilib -Isrc/shaders
-
 LIBS +=-framework Cocoa -framework QuartzCore -framework Metal -framework MetalKit
 CFLAGS +=-ObjC 
 DEFS +=-DSOKOL_METAL
 
 CFLAGS += $(DEFS)
 
-.PHONY: shader
+.PHONY: all shader run clean
 
-main:	 src/main.c src/shaders/shader_glsl.h
-	 clang -o main $(CFLAGS) $(LIBS) src/main.c
+all: main
+
+DEPS = lib/sokol_app.h \
+			 lib/sokol_gfx.h \
+			 lib/sokol_glue.h 
+
+lib/deps.o: lib/deps.c $(DEPS)
+	clang -c $(CFLAGS) -o lib/deps.o lib/deps.c
+
+main: src/main.c src/shaders/shader_glsl.h lib/deps.o
+	clang -o main $(CFLAGS) $(LIBS) lib/deps.o src/main.c
 
 run: main
 	@./main
+
+clean:
+	rm -f main lib/deps.o
 
 compile_flags.txt: FORCE
 	@echo "Generating compile_flags.txt for IDE support"
@@ -32,3 +43,4 @@ sokol:
 
 sokol_tools:
 	wget -O sokol_shdc https://github.com/floooh/sokol-tools-bin/raw/refs/heads/master/bin/osx_arm64/sokol-shdc
+

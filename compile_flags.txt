@@ -1,4 +1,9 @@
+-std=c99
+-Wall
+-Wextra
 -Ilib
 -Isrc/shaders
--ObjC
+-g
+-O0
+-DSOKOL_DEBUG
 -DSOKOL_METAL

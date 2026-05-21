@@ -1,18 +1,22 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 // deps
+#include <HandmadeMath.h>
 #include <sokol_app.h>
 #include <sokol_gfx.h>
 #include <sokol_glue.h>
 
 // shader
 #include <shader_glsl.h>
-// some new
 
 static struct {
   sg_pipeline pip;
   sg_bindings bind;
   sg_pass_action pass_action;
+
+  float *vertices;
+  int vertex_count;
 } state;
 
 void init() {
@@ -20,12 +24,21 @@ void init() {
 
   sg_setup(&(sg_desc){.environment = sglue_environment()});
 
+  state.vertex_count = 21;
+  state.vertices = malloc(state.vertex_count * sizeof(float));
+
   float vertices[] = {0.0f,  0.5f,  0.5f, 1.0f, 0.0f, 0.0f, 1.0f,
                       0.5f,  -0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 1.0f,
                       -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f};
 
+  for (int i = 0; i < state.vertex_count; i++) {
+    state.vertices[i] = vertices[i];
+  };
+
   state.bind.vertex_buffers[0] = sg_make_buffer(&(sg_buffer_desc){
-      .data = SG_RANGE(vertices), .label = "triangle_verices"});
+      .size = state.vertex_count * sizeof(float),
+      .usage = {.vertex_buffer = true, .dynamic_update = true},
+      .label = "dynamic-vertex-buffer"});
 
   sg_shader shd = sg_make_shader(triangle_shader_desc(sg_query_backend()));
 
@@ -46,6 +59,11 @@ void init() {
 }
 
 void frame() {
+
+  sg_update_buffer(state.bind.vertex_buffers[0],
+                   &(sg_range){.ptr = state.vertices,
+                               .size = state.vertex_count * sizeof(float)});
+
   sg_begin_pass(
       &(sg_pass){.action = state.pass_action, .swapchain = sglue_swapchain()});
 
@@ -57,7 +75,11 @@ void frame() {
   sg_commit();
 }
 
-void cleanup() { sg_shutdown(); }
+void cleanup() {
+  sg_shutdown();
+
+  free(state.vertices);
+}
 
 void event(const sapp_event *ev) {
   if (ev->type == SAPP_EVENTTYPE_KEY_DOWN) {
@@ -73,7 +95,8 @@ void event(const sapp_event *ev) {
 }
 
 sapp_desc sokol_main(int argc, char *argv[]) {
-  (void)argc; (void)argv;
+  (void)argc;
+  (void)argv;
   printf("Hello sokol! \n");
 
   return (sapp_desc){

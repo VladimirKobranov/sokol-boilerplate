@@ -7,6 +7,8 @@
 #include <sokol_gfx.h>
 #include <sokol_glue.h>
 
+#include "cgltf.h"
+
 // shader
 #include <shader_glsl.h>
 
@@ -27,34 +29,32 @@ void init() {
   state.vertex_count = 20;
   state.vertices = malloc(state.vertex_count * sizeof(float));
 
-    float vertices[] = {
-         0.0f,  0.5f, 0.5f,     1.0f, 0.0f, 0.0f, 1.0f,
-         0.5f, -0.5f, 0.5f,     0.0f, 1.0f, 0.0f, 1.0f,
-        -0.5f, -0.5f, 0.5f,     0.0f, 0.0f, 1.0f, 1.0f
-    };
+  float vertices[] = {0.0f,  0.5f,  0.5f, 1.0f, 0.0f, 0.0f, 1.0f,
+                      0.5f,  -0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 1.0f,
+                      -0.5f, -0.5f, 0.5f, 0.0f, 0.0f, 1.0f, 1.0f};
 
   for (int i = 0; i < state.vertex_count; i++) {
     state.vertices[i] = vertices[i];
   }
 
   state.bind.vertex_buffers[0] = sg_make_buffer(&(sg_buffer_desc){
-    .size = state.vertex_count * sizeof(float),
-    .usage = {.vertex_buffer = true, .dynamic_update = true},
-    .label = "dynamic-vertex-buffer"});
+      .size = state.vertex_count * sizeof(float),
+      .usage = {.vertex_buffer = true, .dynamic_update = true},
+      .label = "dynamic-vertex-buffer"});
 
   sg_shader shd = sg_make_shader(triangle_shader_desc(sg_query_backend()));
 
-  state.pip = sg_make_pipeline(&(sg_pipeline_desc){
-    .shader = shd,
-    .layout =
-    {
-      .attrs = {[ATTR_triangle_position].format = SG_VERTEXFORMAT_FLOAT3,
-        [ATTR_triangle_color0].format = SG_VERTEXFORMAT_FLOAT4}},
-    .label = "triangle-pipeline"});
+  state.pip = sg_make_pipeline(
+      &(sg_pipeline_desc){.shader = shd,
+                          .layout = {.attrs = {[ATTR_triangle_position].format =
+                                                   SG_VERTEXFORMAT_FLOAT3,
+                                               [ATTR_triangle_color0].format =
+                                                   SG_VERTEXFORMAT_FLOAT4}},
+                          .label = "triangle-pipeline"});
 
   state.pass_action = (sg_pass_action){
-    .colors[0] = {.load_action = SG_LOADACTION_CLEAR,
-      .clear_value = {0.1f, 0.1f, 0.1f, 1.0f}},
+      .colors[0] = {.load_action = SG_LOADACTION_CLEAR,
+                    .clear_value = {0.1f, 0.1f, 0.1f, 1.0f}},
   };
 }
 
@@ -62,10 +62,10 @@ void frame() {
 
   sg_update_buffer(state.bind.vertex_buffers[0],
                    &(sg_range){.ptr = state.vertices,
-                   .size = state.vertex_count * sizeof(float)});
+                               .size = state.vertex_count * sizeof(float)});
 
   sg_begin_pass(
-    &(sg_pass){.action = state.pass_action, .swapchain = sglue_swapchain()});
+      &(sg_pass){.action = state.pass_action, .swapchain = sglue_swapchain()});
 
   sg_apply_pipeline(state.pip);
   sg_apply_bindings(&state.bind);
@@ -100,11 +100,11 @@ sapp_desc sokol_main(int argc, char *argv[]) {
   printf("Hello sokol! \n");
 
   return (sapp_desc){
-    .width = 800,
-    .height = 600,
-    .init_cb = init,
-    .frame_cb = frame,
-    .cleanup_cb = cleanup,
-    .event_cb = event,
+      .width = 800,
+      .height = 600,
+      .init_cb = init,
+      .frame_cb = frame,
+      .cleanup_cb = cleanup,
+      .event_cb = event,
   };
 }

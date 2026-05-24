@@ -28,6 +28,8 @@ static struct {
   // glb\gltf model
   char name[64];
   int num_indices;
+  int num_vertices;
+  int num_triangles;
 } model;
 
 void loadFile() {
@@ -58,6 +60,11 @@ void loadFile() {
   void *idx_data = ibase + idx->buffer_view->offset + idx->offset;
   cgltf_bool is_uint16 = idx->component_type == cgltf_component_type_r_16u;
   model.num_indices = (int)idx->count;
+
+  model.num_vertices = (int)pos->count;
+  model.num_indices = (int)idx->count;
+  model.num_triangles = model.num_indices / 3;
+
   state.index_type = is_uint16 ? SG_INDEXTYPE_UINT16 : SG_INDEXTYPE_UINT32;
   state.ibuf = sg_make_buffer(&(sg_buffer_desc){
       .usage = {.index_buffer = true},
@@ -122,8 +129,10 @@ void frame() {
   sdtx_puts("logs:\n");
   sdtx_printf("model: %s\n", model.name);
   sdtx_printf("indices: %d\n", model.num_indices);
-  sdtx_draw();
+  sdtx_printf("vertices: %i\n", model.num_vertices);
+  sdtx_printf("triangles: %i\n", model.num_triangles);
 
+  sdtx_draw();
   sg_end_pass();
   sg_commit();
 }

@@ -1,21 +1,20 @@
-@vs vs
-in vec4 position;
-in vec4 color0;
+@ctype mat4 HMM_Mat4
 
-out vec4 color;
+@vs vs
+layout(binding=0) uniform vs_params {
+    mat4 mvp;
+};
+in vec4 position;
 
 void main() {
-    gl_Position = position;
-    color = color0;
+    gl_Position = mvp * position;
 }
 @end
 
 @fs fs
-in vec4 color;
 out vec4 frag_color;
-
 void main() {
-    frag_color = color;
+    frag_color = vec4(1.0, 0.5, 0.2, 1.0);
 }
 @end
 

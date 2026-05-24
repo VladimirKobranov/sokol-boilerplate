@@ -1,8 +1,11 @@
 #include <stdio.h>
+#include <string.h>
 // sokol
 #include <sokol_app.h>
 #include <sokol_gfx.h>
 #include <sokol_glue.h>
+// sokol debugger
+#include "sokol_debugtext.h"
 // glb import
 #include "cgltf.h"
 // matrix
@@ -23,6 +26,7 @@ static struct {
 
 static struct {
   // glb\gltf model
+  char name[64];
   int num_indices;
 } model;
 
@@ -33,6 +37,9 @@ void loadFile() {
   cgltf_load_buffers(&options, data, "./scene.glb");
 
   cgltf_primitive *prim = &data->meshes[0].primitives[0];
+  snprintf(model.name, sizeof(model.name), "%s",
+           data->meshes[0].name ? data->meshes[0].name : "unnamed");
+
   cgltf_accessor *pos = NULL;
   for (cgltf_size i = 0; i < prim->attributes_count; i++)
     if (prim->attributes[i].type == cgltf_attribute_type_position)
@@ -81,6 +88,11 @@ void init() {
                     .clear_value = {0.1f, 0.1f, 0.1f, 1.0f}},
       .depth = {.load_action = SG_LOADACTION_CLEAR, .clear_value = 1.0f},
   };
+
+  // debugger
+  sdtx_setup(&(sdtx_desc_t){
+      .fonts[0] = sdtx_font_kc853(),
+  });
 }
 
 void frame() {
@@ -97,16 +109,27 @@ void frame() {
 
   sg_begin_pass(
       &(sg_pass){.action = state.pass_action, .swapchain = sglue_swapchain()});
+
   sg_apply_pipeline(state.pip);
   sg_apply_bindings(&state.bind);
   sg_range uniform_range = {.ptr = &vs_params, .size = sizeof(vs_params)};
   sg_apply_uniforms(UB_vs_params, &uniform_range);
   sg_draw(0, model.num_indices, 1);
+
+  sdtx_canvas(sapp_widthf() * 0.5f, sapp_heightf() * 0.5f);
+  sdtx_origin(1.0f, 1.0f);
+  sdtx_color3f(1.0f, 1.0f, 1.0f);
+  sdtx_puts("logs:\n");
+  sdtx_printf("model: %s\n", model.name);
+  sdtx_printf("indices: %d\n", model.num_indices);
+  sdtx_draw();
+
   sg_end_pass();
   sg_commit();
 }
 
 void cleanup() {
+  sdtx_shutdown();
   sg_destroy_buffer(state.vbuf);
   sg_destroy_buffer(state.ibuf);
   sg_shutdown();

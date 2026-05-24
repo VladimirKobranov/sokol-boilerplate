@@ -67,6 +67,9 @@ void init() {
                           .layout = {.attrs = {[ATTR_triangle_position].format =
                                                    SG_VERTEXFORMAT_FLOAT3}},
                           .index_type = state.index_type,
+                          .face_winding = SG_FACEWINDING_CCW,
+                          .depth = {.compare = SG_COMPAREFUNC_LESS_EQUAL,
+                                    .write_enabled = true},
                           .label = "cube-pipeline"});
 
   state.pass_action = (sg_pass_action){
@@ -80,14 +83,15 @@ void frame() {
   float angle = (float)sapp_frame_count() * 0.01f;
   float aspect = (float)sapp_width() / (float)sapp_height();
 
-  HMM_Mat4 model = HMM_Rotate_RH(angle, HMM_V3(0, 1, 0));
+  HMM_Mat4 model = HMM_Rotate_RH(angle, HMM_V3(0.25, 0.5, 0));
   HMM_Mat4 view =
       HMM_LookAt_RH(HMM_V3(7, 0, 0), HMM_V3(0, 0, 0), HMM_V3(0, 1, 0));
   // ZO = Zero to One; clipping
   HMM_Mat4 proj =
       HMM_Perspective_RH_ZO(HMM_AngleDeg(50.0f), aspect, 0.1f, 100.0f);
-  HMM_Mat4 mvp = HMM_MulM4(proj, HMM_MulM4(view, model));
-  vs_params_t vs_params = {.mvp = mvp};
+  HMM_Mat4 mv = HMM_MulM4(view, model);
+  HMM_Mat4 mvp = HMM_MulM4(proj, mv);
+  vs_params_t vs_params = {.mvp = mvp, .mv = mv};
 
   sg_begin_pass(
       &(sg_pass){.action = state.pass_action, .swapchain = sglue_swapchain()});

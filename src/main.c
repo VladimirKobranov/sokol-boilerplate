@@ -14,8 +14,10 @@
 // shader
 #include <shader_glsl.h>
 
+/**
+ * @brief Sokol struct
+ */
 static struct {
-  // sokol
   sg_pipeline pip;
   sg_bindings bind;
   sg_pass_action pass_action;
@@ -24,14 +26,24 @@ static struct {
   sg_index_type index_type;
 } state;
 
+/**
+ * @brief Loaded file struct
+ * Store all glb\gltf file information
+ */
 static struct {
-  // glb\gltf model
-  char name[64];
-  int num_indices;
-  int num_vertices;
-  int num_triangles;
+  char name[64];     ///< Name of the model
+  int num_indices;   ///< Number of indices
+  int num_vertices;  ///< Number of vertices
+  int num_triangles; ///< Number of triangles (calculated from num_vertices / 3)
 } model;
 
+/**
+ * @brief Loads a 3D model from a file.
+ *
+ * @param filename Path to the .glb/.gltf file.
+ *
+ * @return 0 on success, otherwise an error code.
+ */
 void loadFile() {
   cgltf_options options = {0};
   cgltf_data *data = NULL;
@@ -102,6 +114,11 @@ void init() {
   });
 }
 
+/**
+ * @brief Main frame function
+ * Works each frame
+ *
+ */
 void frame() {
   float angle = (float)sapp_frame_count() * 0.01f;
   float aspect = (float)sapp_width() / (float)sapp_height();
@@ -137,6 +154,10 @@ void frame() {
   sg_commit();
 }
 
+/**
+ * @brief Cleanup of resources
+ *
+ */
 void cleanup() {
   sdtx_shutdown();
   sg_destroy_buffer(state.vbuf);
@@ -144,12 +165,20 @@ void cleanup() {
   sg_shutdown();
 }
 
+/**
+ * @brief Sokol events handler
+ *
+ */
 void event(const sapp_event *ev) {
   if (ev->type == SAPP_EVENTTYPE_KEY_DOWN &&
       ev->key_code == SAPP_KEYCODE_ESCAPE)
     sapp_quit();
 }
 
+/**
+ * @brief Sokol config function
+ *
+ */
 sapp_desc sokol_main(int argc, char *argv[]) {
   (void)argc;
   (void)argv;

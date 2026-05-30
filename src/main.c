@@ -1,4 +1,6 @@
+#include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 // sokol
 #include <sokol_app.h>
@@ -13,6 +15,8 @@
 #define mat4 HMM_Mat4
 // shader
 #include <shader_glsl.h>
+// images
+#include "stb_image.h"
 
 /**
  * @brief Sokol struct
@@ -23,6 +27,9 @@ static struct {
   sg_pass_action pass_action;
   sg_buffer vbuf;
   sg_buffer ibuf;
+  sg_image tex;
+  sg_view tex_view;
+  sg_sampler smp;
   sg_index_type index_type;
 } state;
 
@@ -36,6 +43,22 @@ static struct {
   int num_vertices;  ///< Number of vertices
   int num_triangles; ///< Number of triangles (calculated from num_vertices / 3)
 } model;
+
+static struct {
+  char name[64];
+  char mime_type[32];
+  int width;
+  int height;
+  int channels;
+  int decoded_channels;
+  int encoded_size;
+  int embedded;
+} texture;
+
+typedef struct {
+  float position[3];
+  float texcoord0[2];
+} vertex_t;
 
 /**
  * @brief Loads a 3D model from a file.
@@ -55,17 +78,72 @@ void loadFile() {
            data->meshes[0].name ? data->meshes[0].name : "unnamed");
 
   cgltf_accessor *pos = NULL;
-  for (cgltf_size i = 0; i < prim->attributes_count; i++)
-    if (prim->attributes[i].type == cgltf_attribute_type_position)
+  cgltf_accessor *texcoord0 = NULL;
+  for (cgltf_size i = 0; i < prim->attributes_count; i++) {
+    if (prim->attributes[i].type == cgltf_attribute_type_position) {
       pos = prim->attributes[i].data;
+    }
+    if (prim->attributes[i].type == cgltf_attribute_type_texcoord &&
+        prim->attributes[i].index == 0) {
+      texcoord0 = prim->attributes[i].data;
+    }
+  }
 
-  unsigned char *base = (unsigned char *)pos->buffer_view->buffer->data;
-  float *verts = (float *)(base + pos->buffer_view->offset + pos->offset);
+  vertex_t *verts = malloc(pos->count * sizeof(vertex_t));
+  for (cgltf_size i = 0; i < pos->count; i++) {
+    cgltf_accessor_read_float(pos, i, verts[i].position, 3);
+    cgltf_accessor_read_float(texcoord0, i, verts[i].texcoord0, 2);
+  }
+
   state.vbuf = sg_make_buffer(&(sg_buffer_desc){
-      .size = pos->count * pos->stride,
-      .data = {.ptr = verts, .size = pos->count * pos->stride},
+      .size = pos->count * sizeof(vertex_t),
+      .data = {.ptr = verts, .size = pos->count * sizeof(vertex_t)},
   });
   state.bind.vertex_buffers[0] = state.vbuf;
+  free(verts);
+
+  cgltf_texture_view *base_color =
+      &prim->material->pbr_metallic_roughness.base_color_texture;
+  cgltf_image *image = base_color->texture->image;
+  cgltf_buffer_view *image_view = image->buffer_view;
+  unsigned char *encoded =
+      (unsigned char *)image_view->buffer->data + image_view->offset;
+
+  int width = 0;
+  int height = 0;
+  int channels = 0;
+  unsigned char *pixels = stbi_load_from_memory(encoded, (int)image_view->size,
+                                                &width, &height, &channels, 4);
+  printf("texture: %dx%d, channels: %d\n", width, height, channels);
+
+  snprintf(texture.name, sizeof(texture.name), "%s",
+           image->name ? image->name : "unnamed");
+  snprintf(texture.mime_type, sizeof(texture.mime_type), "%s",
+           image->mime_type ? image->mime_type : "unknown");
+  texture.width = width;
+  texture.height = height;
+  texture.channels = channels;
+  texture.decoded_channels = 4;
+  texture.encoded_size = (int)image_view->size;
+  texture.embedded = image->buffer_view != NULL;
+
+  state.tex = sg_make_image(&(sg_image_desc){
+      .width = width,
+      .height = height,
+      .pixel_format = SG_PIXELFORMAT_RGBA8,
+      .data.mip_levels[0] = {.ptr = pixels,
+                             .size = (size_t)(width * height * 4)},
+  });
+  state.tex_view = sg_make_view(&(sg_view_desc){.texture.image = state.tex});
+  state.smp = sg_make_sampler(&(sg_sampler_desc){
+      .min_filter = SG_FILTER_LINEAR,
+      .mag_filter = SG_FILTER_LINEAR,
+      .wrap_u = SG_WRAP_REPEAT,
+      .wrap_v = SG_WRAP_REPEAT,
+  });
+  state.bind.views[VIEW_base_color_tex] = state.tex_view;
+  state.bind.samplers[SMP_base_color_smp] = state.smp;
+  stbi_image_free(pixels);
 
   cgltf_accessor *idx = prim->indices;
   unsigned char *ibase = (unsigned char *)idx->buffer_view->buffer->data;
@@ -95,8 +173,13 @@ void init() {
   sg_shader shd = sg_make_shader(triangle_shader_desc(sg_query_backend()));
   state.pip = sg_make_pipeline(&(sg_pipeline_desc){
       .shader = shd,
-      .layout = {.attrs = {[ATTR_triangle_position].format =
-                               SG_VERTEXFORMAT_FLOAT3}},
+      .layout = {.buffers[0].stride = sizeof(vertex_t),
+                 .attrs = {[ATTR_triangle_position] =
+                               {.format = SG_VERTEXFORMAT_FLOAT3,
+                                .offset = offsetof(vertex_t, position)},
+                           [ATTR_triangle_texcoord0] =
+                               {.format = SG_VERTEXFORMAT_FLOAT2,
+                                .offset = offsetof(vertex_t, texcoord0)}}},
       .index_type = state.index_type,
       .face_winding = SG_FACEWINDING_CCW,
       .depth = {.compare = SG_COMPAREFUNC_LESS_EQUAL, .write_enabled = true},
@@ -148,6 +231,13 @@ void frame() {
   sdtx_printf("indices: %d\n", model.num_indices);
   sdtx_printf("vertices: %i\n", model.num_vertices);
   sdtx_printf("triangles: %i\n", model.num_triangles);
+  sdtx_printf("texture: %s\n", texture.name);
+  sdtx_printf("texture mime: %s\n", texture.mime_type);
+  sdtx_printf("texture size: %dx%dpx\n", texture.width, texture.height);
+  sdtx_printf("texture channels: %d -> %d\n", texture.channels,
+              texture.decoded_channels);
+  sdtx_printf("texture encoded: %d bytes\n", texture.encoded_size);
+  sdtx_printf("texture embedded: %s\n", texture.embedded ? "yes" : "no");
 
   sdtx_draw();
   sg_end_pass();
@@ -162,6 +252,9 @@ void cleanup() {
   sdtx_shutdown();
   sg_destroy_buffer(state.vbuf);
   sg_destroy_buffer(state.ibuf);
+  sg_destroy_sampler(state.smp);
+  sg_destroy_view(state.tex_view);
+  sg_destroy_image(state.tex);
   sg_shutdown();
 }
 

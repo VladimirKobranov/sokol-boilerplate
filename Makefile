@@ -69,6 +69,7 @@ DEPS = lib/sokol_app.h \
 			 lib/sokol_glue.h \
 			 lib/sokol_debugtext.h \
 			 lib/HandmadeMath.h \
+			 lib/stb_image.h \
 			 lib/cgltf.h
 
 # Compile Sokol implementation once (with SOKOL_CFLAGS to apply -ObjC only on macOS)
@@ -104,6 +105,7 @@ sokol:
 	wget -O lib/HandmadeMath.h https://raw.githubusercontent.com/HandmadeMath/HandmadeMath/refs/heads/master/HandmadeMath.h
 	wget -O lib/cgltf.h https://raw.githubusercontent.com/jkuhlmann/cgltf/refs/heads/master/cgltf.h
 	wget -O lib/sokol_debugtext.h https://raw.githubusercontent.com/floooh/sokol/refs/heads/master/util/sokol_debugtext.h
+	wget -O lib/stb_image.h https://raw.githubusercontent.com/nothings/stb/refs/heads/master/stb_image.h
 
 sokol_tools:
 	wget -O sokol_shdc https://github.com/floooh/sokol-tools-bin/raw/refs/heads/master/bin/osx_arm64/sokol-shdc
